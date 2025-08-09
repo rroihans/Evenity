@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '../models/event.dart';
 import '../models/user.dart';
 
@@ -20,8 +21,6 @@ class ApiService {
       throw Exception('Gagal terhubung ke server');
     }
   }
-
-  // --- AUTENTIKASI ---
 
   Future<AuthResponse> login(String studentNumber, String password) async {
     final response = await http.post(
@@ -64,7 +63,7 @@ class ApiService {
       }),
     );
 
-    if (response.statusCode == 201) { // status 201 untuk created
+    if (response.statusCode == 201) {
       final responseData = json.decode(response.body);
       return AuthResponse.fromJson(responseData['data']);
     } else {
@@ -74,6 +73,43 @@ class ApiService {
         errorMessage = errorData['errors'].values.first[0];
       }
       throw Exception(errorMessage);
+    }
+  }
+
+  // crete event function
+  Future<void> createEvent({
+    required String title,
+    required String description,
+    required String location,
+    required String category,
+    required DateTime startDate,
+    required DateTime endDate,
+    required int maxAttendees,
+    required String token,
+  }) async {
+    final DateFormat formatter = DateFormat("yyyy-MM-dd HH:mm:ss");
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/events'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode({
+        'title': title,
+        'description': description,
+        'location': location,
+        'category': category,
+        'start_date': formatter.format(startDate),
+        'end_date': formatter.format(endDate),
+        'max_attendees': maxAttendees,
+        'price': 0,
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Gagal membuat event');
     }
   }
 }

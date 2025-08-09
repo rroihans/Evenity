@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../models/event.dart';
 import '../widgets/event_card.dart';
 import 'login_screen.dart';
+import 'create_event_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,14 +21,25 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadToken();
-    _eventsFuture = apiService.getEvents();
+    _loadTokenAndEvents();
+  }
+
+  Future<void> _loadTokenAndEvents() async {
+    await _loadToken();
+    _refreshEvents();
   }
 
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _token = prefs.getString('token');
+    });
+  }
+
+  // fungsi untuk refresh daftar event
+  void _refreshEvents() {
+    setState(() {
+      _eventsFuture = apiService.getEvents();
     });
   }
 
@@ -56,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
-              ).then((_) => _loadToken());
+              ).then((_) => _loadTokenAndEvents());
             },
             child: const Text('Login', style: TextStyle(color: Colors.white)),
           )
@@ -67,28 +79,45 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<List<Event>>(
-        future: _eventsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Tidak ada event tersedia.'));
-          } else {
-            final events = snapshot.data!;
-            return ListView.builder(
-              itemCount: events.length,
-              itemBuilder: (context, index) {
-                return EventCard(event: events[index]);
-              },
-            );
-          }
+      // RefreshIndicator agar bisa pull-to-refresh
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _refreshEvents();
         },
+        child: FutureBuilder<List<Event>>(
+          future: _eventsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('Tidak ada event tersedia.'));
+            } else {
+              final events = snapshot.data!;
+              return ListView.builder(
+                itemCount: events.length,
+                itemBuilder: (context, index) {
+                  return EventCard(event: events[index]);
+                },
+              );
+            }
+          },
+        ),
       ),
       floatingActionButton: _token != null ? FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          // navigasi ke halaman create event
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateEventScreen()),
+          ).then((result) {
+            // jika hasilnya true, refresh list
+            if (result == true) {
+              _refreshEvents();
+            }
+          });
+        },
         tooltip: 'Buat Event Baru',
         child: const Icon(Icons.add),
       ) : null,
