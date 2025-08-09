@@ -7,9 +7,24 @@ import '../models/user.dart';
 class ApiService {
   final String baseUrl = 'http://103.160.63.165/api';
 
-  Future<List<Event>> getEvents() async {
+  Future<List<Event>> getEvents({String? searchQuery, String? category}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/events'));
+      var uri = Uri.parse('$baseUrl/events');
+
+      Map<String, String> queryParams = {};
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryParams['search'] = searchQuery;
+      }
+      if (category != null && category.isNotEmpty) {
+        queryParams['category'] = category;
+      }
+
+      if (queryParams.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParams);
+      }
+
+      final response = await http.get(uri);
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List<dynamic> eventData = responseData['data']['events'];
@@ -76,7 +91,6 @@ class ApiService {
     }
   }
 
-  // crete event function
   Future<void> createEvent({
     required String title,
     required String description,
@@ -104,6 +118,7 @@ class ApiService {
         'end_date': formatter.format(endDate),
         'max_attendees': maxAttendees,
         'price': 0,
+        'image_url': 'https://placehold.co/600x400'
       }),
     );
 
