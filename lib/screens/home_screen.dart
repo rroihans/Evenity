@@ -40,7 +40,17 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // otomatis update ketika search query berubah
+  // fungsi untuk mengambil event dengan filter
+  void _fetchEvents() {
+    setState(() {
+      _eventsFuture = apiService.getEvents(
+        searchQuery: _searchQuery,
+        category: _selectedCategory,
+      );
+    });
+  }
+
+  // akan dipanggil setiap kali teks di search bar berubah
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -65,15 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // fungsi untuk mengambil event dengan filter
-  void _fetchEvents() {
-    setState(() {
-      _eventsFuture = apiService.getEvents(
-        searchQuery: _searchQuery,
-        category: _selectedCategory,
-      );
-    });
-  }
+
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();

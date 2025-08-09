@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/event.dart';
+import '../screens/event_detail_screen.dart';
 
 class EventCard extends StatelessWidget {
   final Event event;
@@ -16,7 +17,14 @@ class EventCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(15.0),
       ),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EventDetailScreen(event: event),
+            ),
+          );
+        },
         borderRadius: BorderRadius.circular(15.0),
         child: Padding(
           padding: const EdgeInsets.all(16.0),

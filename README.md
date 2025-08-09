@@ -7,5 +7,5 @@ Evenity adalah sebuah aplikasi android yang dikembangkan menggunakan Flutter ber
 
 Untuk memenuhi Ujian Akhir Semester Akhir TA 2024/2025 mata kuliah Pemrograman Bergerak. 
 
-Dosen: Achmad Fachrie.
-Creator: Rizki Roihan Soeharto
+Dosen: Achmad Fachrie. 
+Creator: Rizki Roihan Soeharto.

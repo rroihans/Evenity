@@ -10,7 +10,6 @@ class ApiService {
   Future<List<Event>> getEvents({String? searchQuery, String? category}) async {
     try {
       var uri = Uri.parse('$baseUrl/events');
-
       Map<String, String> queryParams = {};
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['search'] = searchQuery;
@@ -18,13 +17,10 @@ class ApiService {
       if (category != null && category.isNotEmpty) {
         queryParams['category'] = category;
       }
-
       if (queryParams.isNotEmpty) {
         uri = uri.replace(queryParameters: queryParams);
       }
-
       final response = await http.get(uri);
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List<dynamic> eventData = responseData['data']['events'];
@@ -40,7 +36,7 @@ class ApiService {
   Future<AuthResponse> login(String studentNumber, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/login'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       body: json.encode({
         'student_number': studentNumber,
         'password': password,
@@ -48,11 +44,14 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      return AuthResponse.fromJson(responseData['data']);
+      return AuthResponse.fromJson(json.decode(response.body)['data']);
     } else {
-      final errorData = json.decode(response.body);
-      throw Exception(errorData['message'] ?? 'Login Gagal');
+      try {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Login Gagal');
+      } catch (e) {
+        throw Exception('Terjadi kesalahan pada server. Pastikan input benar.');
+      }
     }
   }
 
@@ -66,7 +65,7 @@ class ApiService {
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/register'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       body: json.encode({
         'name': name,
         'email': email,
@@ -79,15 +78,18 @@ class ApiService {
     );
 
     if (response.statusCode == 201) {
-      final responseData = json.decode(response.body);
-      return AuthResponse.fromJson(responseData['data']);
+      return AuthResponse.fromJson(json.decode(response.body)['data']);
     } else {
-      final errorData = json.decode(response.body);
-      String errorMessage = errorData['message'] ?? 'Registrasi Gagal';
-      if (errorData['errors'] != null) {
-        errorMessage = errorData['errors'].values.first[0];
+      try {
+        final errorData = json.decode(response.body);
+        String errorMessage = errorData['message'] ?? 'Registrasi Gagal';
+        if (errorData['errors'] != null) {
+          errorMessage = errorData['errors'].values.first[0];
+        }
+        throw Exception(errorMessage);
+      } catch (e) {
+        throw Exception('Terjadi kesalahan pada server. Pastikan semua field terisi benar.');
       }
-      throw Exception(errorMessage);
     }
   }
 
@@ -102,7 +104,6 @@ class ApiService {
     required String token,
   }) async {
     final DateFormat formatter = DateFormat("yyyy-MM-dd HH:mm:ss");
-
     final response = await http.post(
       Uri.parse('$baseUrl/events'),
       headers: {
@@ -121,7 +122,6 @@ class ApiService {
         'image_url': 'https://placehold.co/600x400'
       }),
     );
-
     if (response.statusCode != 201) {
       final errorData = json.decode(response.body);
       throw Exception(errorData['message'] ?? 'Gagal membuat event');

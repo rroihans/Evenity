@@ -9,6 +9,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _studentNumberController = TextEditingController();
@@ -19,32 +20,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
 
   void _register() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await _apiService.register(
-        name: _nameController.text,
-        email: _emailController.text,
-        studentNumber: _studentNumberController.text,
-        major: _majorController.text,
-        classYear: int.parse(_classYearController.text),
-        password: _passwordController.text,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registrasi berhasil! Silakan login.')),
-      );
-      Navigator.pop(context); // kembali ke halaman login
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}')),
-      );
-    } finally {
+    // cek validasi form sebelum mengirim request
+    if (_formKey.currentState!.validate()) {
       setState(() {
-        _isLoading = false;
+        _isLoading = true;
       });
+
+      try {
+        await _apiService.register(
+          name: _nameController.text,
+          email: _emailController.text,
+          studentNumber: _studentNumberController.text,
+          major: _majorController.text,
+          classYear: int.parse(_classYearController.text),
+          password: _passwordController.text,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registrasi berhasil! Silakan login.')),
+        );
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}')),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -55,28 +59,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder())),
-              const SizedBox(height: 16),
-              TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()), keyboardType: TextInputType.emailAddress),
-              const SizedBox(height: 16),
-              TextField(controller: _studentNumberController, decoration: const InputDecoration(labelText: 'Nomor Mahasiswa', border: OutlineInputBorder()), keyboardType: TextInputType.number),
-              const SizedBox(height: 16),
-              TextField(controller: _majorController, decoration: const InputDecoration(labelText: 'Jurusan', border: OutlineInputBorder())),
-              const SizedBox(height: 16),
-              TextField(controller: _classYearController, decoration: const InputDecoration(labelText: 'Tahun Angkatan', border: OutlineInputBorder()), keyboardType: TextInputType.number),
-              const SizedBox(height: 16),
-              TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()), obscureText: true),
-              const SizedBox(height: 24),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                onPressed: _register,
-                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-                child: const Text('Daftar'),
-              ),
-            ],
+          // bungkus dengan Form
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder()),
+                  validator: (v) => v!.isEmpty ? 'Nama tidak boleh kosong' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (v) => v!.isEmpty ? 'Email tidak boleh kosong' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _studentNumberController,
+                  decoration: const InputDecoration(labelText: 'Nomor Mahasiswa', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? 'Nomor mahasiswa tidak boleh kosong' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _majorController,
+                  decoration: const InputDecoration(labelText: 'Jurusan', border: OutlineInputBorder()),
+                  validator: (v) => v!.isEmpty ? 'Jurusan tidak boleh kosong' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _classYearController,
+                  decoration: const InputDecoration(labelText: 'Tahun Angkatan', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? 'Tahun angkatan tidak boleh kosong' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                  obscureText: true,
+                  validator: (v) => v!.isEmpty ? 'Password tidak boleh kosong' : null,
+                ),
+                const SizedBox(height: 24),
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                  onPressed: _register,
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                  child: const Text('Daftar'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
